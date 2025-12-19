@@ -1,0 +1,25 @@
+[project]
+name = "safetyalign"
+version = "0.1.0"
+description = "Engineering DPO fine-tuning project for safety alignment on Qwen2.5."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+license = { text = "MIT" }
+authors = [{ name = "SafetyAlign contributors" }]
+dependencies = [
+  "unsloth[colab-new]",
+  "xformers",
+  "trl",
+  "peft",
+  "accelerate",
+  "bitsandbytes",
+  "transformers",
+  "datasets",
+  "scipy",
+  "pandas",
+  "matplotlib",
+  "seaborn",
+]
+
+[tool.uv]
+package = false

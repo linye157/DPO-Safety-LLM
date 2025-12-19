@@ -1,0 +1,12 @@
+unsloth[colab-new]
+xformers
+trl
+peft
+accelerate
+bitsandbytes
+transformers
+datasets
+scipy
+pandas
+matplotlib
+seaborn
