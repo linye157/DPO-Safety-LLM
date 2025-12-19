@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import shutil
 from typing import Optional
 
 import torch
@@ -17,6 +18,24 @@ from trl import DPOConfig, DPOTrainer
 
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_c_compiler() -> None:
+    """
+    Triton 需要 C 编译器生成运行时扩展，提前检查避免训练中途崩溃。
+    """
+    if not torch.cuda.is_available():
+        return
+    for compiler in ("gcc", "clang", "cc"):
+        if shutil.which(compiler):
+            return
+    raise RuntimeError(
+        "未检测到 C 编译器（gcc/clang/cc）。Triton 需要编译扩展文件。\n"
+        "请安装系统编译器后重试，例如：\n"
+        "  Ubuntu: sudo apt-get install build-essential\n"
+        "  CentOS: sudo yum install gcc gcc-c++\n"
+        "或设置环境变量 CC 指向可用编译器路径。"
+    )
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -133,6 +152,8 @@ def main() -> None:
 
     if not torch.cuda.is_available():
         logger.warning("未检测到 GPU，训练可能无法正常运行。")
+
+    _ensure_c_compiler()
 
     # 加载并处理数据，同时生成长度分布图
     df = load_and_process_data()

@@ -21,6 +21,11 @@ uv venv
 source .venv/bin/activate
 uv pip install -r requirements.txt
 ```
+或者直接(文件夹下有有uv.lock文件和pyproject.toml文件)
+```bash
+uv sync
+``` 
+
 
 如需 GPU 训练，请根据自身环境安装对应的 PyTorch 版本。
 
@@ -65,6 +70,7 @@ bash scripts/run_eval.sh
 
 - 默认数据集：`PKU-Alignment/PKU-SafeRLHF-10K`（`train[:2000]`）。
 - 若需要更严格的 DPO 参考模型，可在训练时加 `--use_reference_model`。
+- Triton 运行需要系统 C 编译器（gcc/clang），未安装会导致训练中断。
 
 ## License
 

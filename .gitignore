@@ -9,11 +9,11 @@ __pycache__/
 
 # Data & cache
 data/
-
+unsloth_compiled_cache
 # Training artifacts
-output/
+output/dpo_lora
+
 logs/
-plots/
 *.log
 *.ckpt
 *.pt
