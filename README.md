@@ -64,18 +64,100 @@ bash scripts/run_eval.sh
 
 评测结果会输出到 `output/evaluation_results.json`。
 
-### 4. 数据样本与模型对比
+### 4. 增强版安全评测（推荐）
+
+使用增强版评测脚本，可以**定量对比基座模型与 DPO 微调模型的安全拒绝能力**，
+判断效果提升来自 DPO 微调还是模型本身：
+
+```bash
+# 基础评测（使用内置分层测试集）
+python scripts/evaluate_safety.py
+
+# 多次采样统计（推荐，用于验证效果的统计显著性）
+python scripts/evaluate_safety.py --num_runs 5
+
+# 启用采样生成（更接近真实使用场景）
+python scripts/evaluate_safety.py --num_runs 5 --do_sample --temperature 0.7
+
+# 仅评测基座模型（用于基线测试）
+python scripts/evaluate_safety.py --base_only
+
+# 仅评测特定类别
+python scripts/evaluate_safety.py --categories obvious_violation boundary_ambiguous
+```
+
+评测报告会输出到 `output/safety_evaluation.json`，包含：
+- **总体拒绝率**：模型拒绝危险请求的比例
+- **分类拒绝率**：按提示词类别细分的拒绝率
+- **对比分析**：微调前后的拒绝率变化及结论
+
+内置测试集包含 5 个类别共 25 个提示词：
+
+| 类别 | 说明 | 预期 |
+|------|------|------|
+| `obvious_violation` | 明显违规（炸弹、诈骗） | 两个模型都应拒绝 |
+| `boundary_ambiguous` | 边界模糊（说服技巧） | 可能暴露差异 |
+| `implicit_risk` | 隐式风险（虚假简历） | 可能暴露差异 |
+| `adversarial_jailbreak` | 对抗性攻击（越狱） | 关键差异点 |
+| `normal_safe` | 正常安全问题 | 不应拒绝 |
+
+自定义测试集格式（每行一个提示词，支持 `[分类]` 标记）：
+
+```
+[my_category]
+提示词1
+提示词2
+[another_category]
+提示词3
+```
+
+使用自定义测试集：
+
+```bash
+python scripts/evaluate_safety.py --prompts_file my_prompts.txt
+```
+
+### 5. 数据样本与模型对比（定性分析）
 
 ```bash
 python scripts/compare_safety.py
 
-#LoRA 训练只有 60 steps，改动可能不足以改变最优 token 输出，建议开启采样：
+# LoRA 训练只有 60 steps，改动可能不足以改变最优 token 输出，建议开启采样：
 python scripts/compare_safety.py --do_sample
 
 python scripts/compare_safety.py --do_sample --temperature 0.9 --max_new_tokens 256
 ```
 
-该脚本会展示数据集样本，并对比基座模型与微调模型在危险提示下的输出。
+该脚本会展示数据集样本，并对比基座模型与微调模型在危险提示下的输出（定性观察）。
+
+
+======================================================================
+SafetyAlign 评测报告
+======================================================================
+
+【基座模型】unsloth/Qwen2.5-7B-Instruct-bnb-4bit
+  总体拒绝率: 72.0%
+  分类拒绝率:
+    - obvious_violation: 100.0%
+    - boundary_ambiguous: 60.0%
+    - adversarial_jailbreak: 40.0%
+
+【微调模型】unsloth/Qwen2.5-7B-Instruct-bnb-4bit + output/dpo_lora
+  总体拒绝率: 84.0%
+  分类拒绝率:
+    - obvious_violation: 100.0%
+    - boundary_ambiguous: 80.0%
+    - adversarial_jailbreak: 60.0%
+
+【对比分析】
+  总体拒绝率变化: +12.0%
+  分类变化:
+    - boundary_ambiguous: +20.0% ↑
+    - adversarial_jailbreak: +20.0% ↑
+
+【结论】DPO 微调显著提升了安全拒绝能力（+12.0%）
+======================================================================
+
 
 ## 结果展示
 
@@ -91,6 +173,10 @@ python scripts/compare_safety.py --do_sample --temperature 0.9 --max_new_tokens 
 ├── data/                  # 数据缓存
 ├── src/                   # 训练与可视化代码
 ├── scripts/               # 运行脚本
+│   ├── run_train.sh       # 训练启动脚本
+│   ├── run_eval.sh        # 基础评测脚本
+│   ├── compare_safety.py  # 定性对比脚本
+│   └── evaluate_safety.py # 增强版定量评测脚本（推荐）
 ├── output/                # 模型与评测输出
 ├── plots/                 # 训练与数据图表
 ├── logs/                  # 运行日志
